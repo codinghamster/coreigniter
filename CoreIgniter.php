@@ -1,91 +1,101 @@
 <?php
 
 /**
- * Custom exception for CI_Connector
+ * Custom exception for CoreIgniter
  */
-class CI_Connector_Exception extends Exception {}
+class CoreIgniterException extends Exception {}
 
 /**
- * CI_Connector class
+ * CoreIgniter class
  *
  * Creates a CodeIgniter instance without overhead like URL processing, etc.
  * Suitable for accessing session or another native CodeIgniter's resources
  * in the same manner as using $this variable.
  */
-class CI_Connector {
+class CoreIgniter
+{
     
     /**
      * Version of the library
      */
-    const VERSION = '1.0';
+    const VERSION = '1.5';
     
     /**
-     * Internal storage of CodeIgniter's super object
+     * Internal storage of CodeIgniter super object instance
      * 
      * @static
      * @access protected
      */
-    protected static $CI;
+    protected static $instance;
     
     /**
-     * Initializes the CodeIgniter (CI) object
+     * Initializes the CodeIgniter super object instance
      * 
      * @static
      * @access public
-     * @param string $basepath      Absolute path to CI's system folder
-     * @param string $apppath       Absolute path to CI's application folder
-     * @param string $environment   Optional environment of the CI instance
-     * @return object CI instance
+     * @param string $basepath          Absolute path to CodeIgniter system folder
+     * @param string $apppath           Absolute path to CodeIgniter application folder
+     * @param string $environment       Optional environment of the CodeIgniter instance
+     * @param string $assign_to_config  Optional config from index.php if it is used
+     * @throws CoreIgniterException if the instance is already initialized or unreachable paths provided
+     * @return object CodeIgniter instance
      */
-    public static function init($basepath, $apppath, $environment = null) {
-        if (isset(self::$CI)) {
-            throw new CI_Connector_Exception('Codeigniter instance is already initialized');
+    public static function init($basepath, $apppath, $environment = null, $assign_to_config = array())
+    {
+        if (self::$instance) {
+            throw new CoreIgniterException('Codeigniter instance is already initialized');
         }
         
         if (!is_dir($basepath)) {
-            throw new CI_Connector_Exception('Supplied base path is not a directory');
-        }
-        else {
+            throw new CoreIgniterException('Supplied base path is not a directory');
+        } else {
             $basepath = rtrim($basepath, '/').'/';
         }
         
         if (!is_dir($apppath)) {
-            throw new CI_Connector_Exception('Supplied application path is not a directory');
-        }
-        else {
+            throw new CoreIgniterException('Supplied application path is not a directory');
+        } else {
             $apppath = rtrim($apppath, '/').'/';
         }
         
         define('BASEPATH', $basepath);
         define('APPPATH', $apppath);
-        
-        if ($environment) {
-            define('ENVIRONMENT', $environment);
-        }
+        define('EXT', '.php');
+        define('ENVIRONMENT', $environment ? $environment : 'development');
         
         require(BASEPATH.'core/Common.php');
+        
+        if (file_exists(APPPATH.'config/'.ENVIRONMENT.'/constants.php')) {
+            require(APPPATH.'config/'.ENVIRONMENT.'/constants.php');
+        } else {
+            require(APPPATH.'config/constants.php');
+        }
+        
+        $GLOBALS['CFG'] =& load_class('Config', 'core');
+        $GLOBALS['CFG']->_assign_to_config($assign_to_config);
+        $GLOBALS['UNI'] =& load_class('Utf8', 'core');
+        if (file_exists($basepath.'core/Security.php')) {
+            $GLOBALS['SEC'] =& load_class('Security', 'core');
+        }
+        load_class('Input', 'core');
+        load_class('Lang', 'core');
+        
         require(BASEPATH.'core/Controller.php');
         
         function &get_instance() {
             return CI_Controller::get_instance();
         }
         
-        $GLOBALS['CFG'] = $CFG =& load_class('Config', 'core');
-        
-        if (file_exists(APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php')) {
-            require APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php';
-            $class = $CFG->config['subclass_prefix'].'Controller';
-        }
-        else {
+        if (file_exists(APPPATH.'core/'.$GLOBALS['CFG']->config['subclass_prefix'].'Controller.php')) {
+            require APPPATH.'core/'.$GLOBALS['CFG']->config['subclass_prefix'].'Controller.php';
+            $class = $GLOBALS['CFG']->config['subclass_prefix'].'Controller';
+        } else {
             $class = 'CI_Controller';
         }
         
-        $GLOBALS['UNI'] =& load_class('Utf8', 'core');
-        load_class('Input', 'core');
+        self::$instance = new $class();
         
-        self::$CI = new $class();
-        
-        return self::$CI;
+        return self::$instance;
     }
     
     /**
@@ -93,12 +103,15 @@ class CI_Connector {
      * 
      * @static
      * @access public
+     * @throws CoreIgniterException if the instance is not yet initialized
      * @return object CI instance
      */
-    public static function CI() {
-        return self::$CI;
+    public static function instance()
+    {
+        if (!self::$instance) {
+            throw new CoreIgniterException('CodeIgniter instance is not initialized yet');
+        }
+        return self::$instance;
     }
     
 }
-
-/* EOF */

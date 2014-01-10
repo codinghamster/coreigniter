@@ -1,0 +1,2 @@
+tests/dists/*
+!tests/dists/readme

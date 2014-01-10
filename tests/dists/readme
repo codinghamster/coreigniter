@@ -1,0 +1,8 @@
+Unzip Codeigniter dists you want to test here into separate folders.
+
+Should be like this:
+dists/CodeIgniter_2.0.0
+dists/CodeIgniter_2.1.0
+dists/CodeIgniter_2.1.4
+
+Test script will catch them automatically

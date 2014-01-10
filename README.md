@@ -1,31 +1,49 @@
-CodeIgniter Connector (CI_Connector) v.1.0
-==========================================
+CoreIgniter v.1.5
+=================
 
-Simple class for creating generic CodeIgniter instance without any URL processing overhead in order to utilize some framework functionality e.g. Sessions.
+Simple class that creates generic CodeIgniter instance to make use of some framework functionality in external scripts.
 
-Supposed to work on CI 2.1+ installations, not tested on previous versions.
+Generic instance means that some functionality is disabled by design e.g. no hooks, no benchmarking, no routing etc.
+
+It was initially created in order to leverage sessions, but some other classes should also work with no problem.
+
+Supposed to work on CodeIgniter 2.0.0 and upper versions.
 
 Example usage
 -------------
 
-    require 'Connector.php';
+```php
+require 'CoreIgniter.php';
     
-    //Specify the root directory of CI installation
-    $root = dirname('/path/to/codeigniter/index.php');
-    
-    //Specify the path to the system folder
-    $basepath = $root.'/system/';
-    
-    //Specify the path to the application folder
-    $apppath = $root.'/application/';
-    
-    //Specify the the supposed environment of the instance
-    $environment = 'development';
-    
-    //Create the instance
-    $CI = CI_Connector::init($basepath, $apppath, $environment);
-    
-    //Use it as usual
-    $CI->load->library('session');
-    
-    var_dump($CI->session->userdata);
+//Specify the root directory of CodeIgniter installation
+$root = dirname('/path/to/codeigniter/index.php');
+
+//Specify the path to the system folder
+$basepath = $root.'/system/';
+
+//Specify the path to the application folder
+$apppath = $root.'/application/';
+
+//Specify the supposed environment of the instance
+$environment = 'development';
+
+//Specify the $assign_to_config array if you use it
+$assign_to_config = array('key' => 'value');
+
+//Create the instance
+try {
+    $CI = CoreIgniter::init($basepath, $apppath, $environment, $assign_to_config);
+} catch (CoreIgniterException $e) {
+    exit($e->getMessage());
+}
+
+//Use it as usual
+$CI->load->library('session');
+
+var_dump($CI->session->userdata);
+```
+
+To be honest
+------------
+
+It is neither well written nor well tested class, however in most cases it just works. If you encounter some issues using it — feel free to report on them here on github.
